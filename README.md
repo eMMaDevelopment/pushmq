@@ -1,6 +1,11 @@
+# OWNERSHIP / LICENSE
+
+This is the original work of the module in npm: https://www.npmjs.org/package/pushmq
+This is not my work. It is just a copy with some modifications.
+
 # pushmq
 
-transparently handle push notifications across multiple services (apns,gcm), backed by a queue (rabbitmq, more to come). 
+transparently handle push notifications across multiple services (apns,gcm), backed by a queue (rabbitmq, more to come).
 
 ## Usage
 
@@ -18,13 +23,13 @@ var apns = new pushmq.services.APNS(config.apns) ;
 var publisher = new pushmq.Publisher('apple_notifications',rabbit);
 
 publisher.publish({ token : '2131324sdfgdsgdfg', payload : { foo : 'bar' } },function(){
-	
+
 	console.log('published')
-	
+
 })
 ```
 
-## Example- Worker (simple) 
+## Example- Worker (simple)
 
 ```javascript
 var pushmq = require('pushmq') ;
@@ -37,7 +42,7 @@ var worker = new pushmq.Worker('apple_notifications',rabbit,apns);
 worker.init();
 ```
 
-## Example- Worker (advanced) 
+## Example- Worker (advanced)
 
 ```javascript
 var pushmq = require('pushmq') ;
@@ -46,7 +51,7 @@ var rabbit = new pushmq.transports.AMQP(config.rabbitmq) ;
 var apns = new pushmq.services.APNS(config.apns) ;
 var worker = new pushmq.Worker('apple_notifications',rabbit,apns);
 
-// start the worker and pass in a function to handle notifications. 
+// start the worker and pass in a function to handle notifications.
 // Function receives 3 args (data,next,acknowledge). This allows you to
 // 1) modify the data being pushed, or 2) short-circuit the notification.
 // The 'next' function actually sends the push notification and takes
@@ -55,42 +60,42 @@ var worker = new pushmq.Worker('apple_notifications',rabbit,apns);
 // callback to 'next'.
 
 worker.init(function( d , next , acknowledge ){
-	
+
 	console.log('Got a notification. About to push.\n',d) ;
-	
+
 	// decide weather or not to continue with the push
-	
+
 	if ( d.payload.type == 'foo' ) {
-		
+
 		d.aps.alert = "FOO MESSAGE" ;
-		
+
 		next( d , acknowledge ) ;
-		
+
 	} else {
-		
+
 		// disregard this notification and acknowledge without pushing
-		
+
 		acknowledge() ;
-		
-	} 
-	
+
+	}
+
 });
 
-// An additional queue will be created that contains tokens that 
+// An additional queue will be created that contains tokens that
 // have been rejected by the service provider. You can subscribe
 // to this queue as well. Again, these messages must be acknowledged
 // in order to run continuously.
 
 worker.onInvalidDevice(function(d,acknowledge){
-	
+
 	console.log('Got an invalid device identifier\n',d) ;
-	
+
 	db.removeToken( d.token , function () {
-		
+
 		acknowledge();
-			
+
 	})
-	
+
 })
 ```
 
