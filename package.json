@@ -1,0 +1,34 @@
+{
+  "name": "pushmq",
+  "version": "0.4.9",
+  "description": "Push notification message queue and scheduler",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/TinderApp/pushmq.git"
+  },
+  "dependencies": {
+    "underscore": "~1.5.2",
+    "async": "~0.2.9",
+    "node-uuid": "~1.4.1",
+    "recant": "~0.2.1",
+    "amq": "~0.4.6",
+    "apn": "git://github.com/objectundefined/node-apn",
+    "log4js": "^0.6.13"
+  },
+  "author": {
+    "name": "Gabriel Lipson, Tinder Inc."
+  },
+  "license": "BSD",
+  "readmeFilename": "README.md",
+  "gitHead": "c407054e2cfdace3c489713cf7eb51e03ba142ba",
+  "bugs": {
+    "url": "https://github.com/TinderApp/pushmq/issues"
+  },
+  "readme": "# pushmq\n\ntransparently handle push notifications across multiple services (apns,gcm), backed by a queue (rabbitmq, more to come). \n\n## Usage\n\nInstall via NPM\n\n    $ npm install pushmq\n\n## Example- Publisher\n\n```javascript\nvar pushmq = require('pushmq') ;\nvar config = require('./config') ;\nvar rabbit = new pushmq.transports.AMQP(config.rabbitmq) ;\nvar apns = new pushmq.services.APNS(config.apns) ;\nvar publisher = new pushmq.Publisher('apple_notifications',rabbit);\n\npublisher.publish({ token : '2131324sdfgdsgdfg', payload : { foo : 'bar' } },function(){\n\t\n\tconsole.log('published')\n\t\n})\n```\n\n## Example- Worker (simple) \n\n```javascript\nvar pushmq = require('pushmq') ;\nvar config = require('./config') ;\nvar rabbit = new pushmq.transports.AMQP(config.rabbitmq) ;\nvar apns = new pushmq.services.APNS(config.apns) ;\nvar worker = new pushmq.Worker('apple_notifications',rabbit,apns);\n\n// start the worker and transparently process APNS messages over the rabbitmq transport\nworker.init();\n```\n\n## Example- Worker (advanced) \n\n```javascript\nvar pushmq = require('pushmq') ;\nvar config = require('./config') ;\nvar rabbit = new pushmq.transports.AMQP(config.rabbitmq) ;\nvar apns = new pushmq.services.APNS(config.apns) ;\nvar worker = new pushmq.Worker('apple_notifications',rabbit,apns);\n\n// start the worker and pass in a function to handle notifications. \n// Function receives 3 args (data,next,acknowledge). This allows you to\n// 1) modify the data being pushed, or 2) short-circuit the notification.\n// The 'next' function actually sends the push notification and takes\n// two arguments ( data, acknowledge ). Messages must be acknowledged in\n// order for the queue to be processed, so acknowledge must be passed as a\n// callback to 'next'.\n\nworker.init(function( d , next , acknowledge ){\n\t\n\tconsole.log('Got a notification. About to push.\\n',d) ;\n\t\n\t// decide weather or not to continue with the push\n\t\n\tif ( d.payload.type == 'foo' ) {\n\t\t\n\t\td.aps.alert = \"FOO MESSAGE\" ;\n\t\t\n\t\tnext( d , acknowledge ) ;\n\t\t\n\t} else {\n\t\t\n\t\t// disregard this notification and acknowledge without pushing\n\t\t\n\t\tacknowledge() ;\n\t\t\n\t} \n\t\n});\n\n// An additional queue will be created that contains tokens that \n// have been rejected by the service provider. You can subscribe\n// to this queue as well. Again, these messages must be acknowledged\n// in order to run continuously.\n\nworker.onInvalidDevice(function(d,acknowledge){\n\t\n\tconsole.log('Got an invalid device identifier\\n',d) ;\n\t\n\tdb.removeToken( d.token , function () {\n\t\t\n\t\tacknowledge();\n\t\t\t\n\t})\n\t\n})\n```\n\n",
+  "_id": "pushmq@0.4.9",
+  "_from": "pushmq@0.4.9"
+}
